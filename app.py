@@ -32,6 +32,21 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y
 )
 
+<<<<<<< HEAD
+# 7. 모델 학습
+model = LogisticRegression(max_iter=1000)   # 기존 코드 유지
+model.fit(X_train, y_train)
+
+# Random Forest 모델 추가
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+
+
+# 8. 평가 (두 모델 비교)
+for name, m in [("Logistic Regression", model), ("Random Forest", rf_model)]:
+    pred = m.predict(X_test)
+    print(f"{name} accuracy: {accuracy_score(y_test, pred):.4f}")
+=======
 # 7. 수치형 변수 스케일링
 numeric_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
 
@@ -48,3 +63,4 @@ y_pred = model.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 
 print(f"Accuracy: {acc:.4f}")
+>>>>>>> origin/main
