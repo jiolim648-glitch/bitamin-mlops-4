@@ -1,25 +1,8 @@
-# Week2 Checkpoint — Branch 기반 협업 실습
 
-- **Repository**: `jiolim648-glitch/bitamin-mlops-4`
-- **담당 역할**: C — `feature/random-forest`
-- **작업 내용**: Random Forest 모델 추가 및 기존 Logistic Regression과 비교 가능하도록 구성
+## 1. 조별 레포 개설 및 1주차 결과물 push
 
----
+<img width="911" height="605" alt="스크린샷 2026-09-23 오후 8 55 23" src="https://github.com/user-attachments/assets/85c6d064-be2a-4fad-9a2c-7bafe9c4df90" />
 
-## 1. 역할 분배와 Branch 생성
-
-`main`에서 작업 브랜치를 만들고 원격 저장소에 push하여 GitHub에서 확인할 수 있도록 했다.
-
-```bash
-git switch -c feature/random-forest
-git push -u origin feature/random-forest
-```
-
-`git branch -r`로 원격 브랜치 목록을 확인한 결과, 내 브랜치 `feature/random-forest`가 원격에 올라간 것을 확인했다.
-
-![원격 브랜치 확인](images/01_remote_branches.png)
-
----
 
 ## 2. 역할별 코드 수정
 
