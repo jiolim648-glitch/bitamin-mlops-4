@@ -1,9 +1,14 @@
 import pandas as pd
+
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+
 
 # 1. 데이터 로드
 df = pd.read_csv("WA_FnUseC_TelcoCustomerChurn.csv")
@@ -11,20 +16,22 @@ df = pd.read_csv("WA_FnUseC_TelcoCustomerChurn.csv")
 # 2. 학습에 쓰지 않을 컬럼 제거
 df = df.drop(columns=["customerID"])
 
-# 3. TotalCharges 숫자형 변환 및 결측치 처리
+# 3. TotalCharges 숫자형 변환
+# 숫자로 변환할 수 없는 값은 NaN으로 처리
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-df = df.dropna()
 
 # 4. 타깃 변수 Churn을 0/1로 변환
 df["Churn"] = df["Churn"].map({"No": 0, "Yes": 1})
 
-# 5. 범주형 입력 변수 One-Hot Encoding
+# 5. 입력 변수와 타깃 변수 분리
 X = df.drop(columns=["Churn"])
 y = df["Churn"]
 
-X = pd.get_dummies(X, drop_first=True)
+# 6. 수치형 / 범주형 컬럼 분리
+numeric_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
+categorical_cols = X.select_dtypes(include=["object"]).columns.tolist()
 
-# 6. 학습/테스트 데이터 분리
+# 7. 학습/테스트 데이터 분리
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
@@ -33,22 +40,52 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y
 )
 
-# 7. 수치형 변수 스케일링
-numeric_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
+# 8. 수치형 전처리 Pipeline
+# 결측치는 중앙값으로 대체하고 StandardScaler 적용
+numeric_pipeline = Pipeline([
+    ("imputer", SimpleImputer(strategy="median")),
+    ("scaler", StandardScaler())
+])
 
-scaler = StandardScaler()
-X_train[numeric_cols] = scaler.fit_transform(X_train[numeric_cols])
-X_test[numeric_cols] = scaler.transform(X_test[numeric_cols])
+# 9. 범주형 전처리 Pipeline
+# 결측치는 최빈값으로 대체하고 One-Hot Encoding 적용
+categorical_pipeline = Pipeline([
+    ("imputer", SimpleImputer(strategy="most_frequent")),
+    ("onehot", OneHotEncoder(
+        drop="first",
+        handle_unknown="ignore"
+    ))
+])
 
-# 8. 모델 학습
-model = LogisticRegression(max_iter=1000)
-model.fit(X_train, y_train)
+# 10. 수치형 / 범주형 전처리 통합
+preprocessor = ColumnTransformer([
+    ("num", numeric_pipeline, numeric_cols),
+    ("cat", categorical_pipeline, categorical_cols)
+])
 
-# Random Forest 모델 추가
-rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_model.fit(X_train, y_train)
+# 11. Logistic Regression Pipeline
+logistic_pipeline = Pipeline([
+    ("preprocessor", preprocessor),
+    ("model", LogisticRegression(max_iter=1000))
+])
 
-# 9. 평가 (두 모델 비교)
-for name, m in [("Logistic Regression", model), ("Random Forest", rf_model)]:
-    pred = m.predict(X_test)
+# 12. Random Forest Pipeline
+rf_pipeline = Pipeline([
+    ("preprocessor", preprocessor),
+    ("model", RandomForestClassifier(
+        n_estimators=100,
+        random_state=42
+    ))
+])
+
+# 13. 모델 학습
+logistic_pipeline.fit(X_train, y_train)
+rf_pipeline.fit(X_train, y_train)
+
+# 14. 평가
+for name, model in [
+    ("Logistic Regression", logistic_pipeline),
+    ("Random Forest", rf_pipeline)
+]:
+    pred = model.predict(X_test)
     print(f"{name} accuracy: {accuracy_score(y_test, pred):.4f}")
